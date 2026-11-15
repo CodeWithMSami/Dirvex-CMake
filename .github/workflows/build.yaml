@@ -1,0 +1,31 @@
+name: Cmake Build
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+        - uses: actions/checkout@v4
+
+        - name: Install build tools
+          run: |
+            sudo apt-get update
+            sudo apt-get install -y ninja-build ccache
+
+        - name: Install vcpkg
+          uses: lukka/run-vcpkg@v11
+          with:
+            vcpkgDirectory: ${{ runner.temp }}/vcpkg
+
+        - name: Configure
+          run: cmake -S . --preset gcc-release -DCMAKE_MAKE_PROGRAM=/usr/bin/ninja
+          env:
+            VCPKG_ROOT: ${{ runner.temp }}/vcpkg
+
+        - name: Build
+          run: cmake --build --preset gcc-release
+
+        - name: Run Test
+          run: ctest --test-dir build/gcc-release --output-on-failure
